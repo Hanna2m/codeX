@@ -1,5 +1,6 @@
 import bot from './assets/bot.svg'
 import user from './assets/user.svg'
+import axios from 'axios'
 
 const form = document.querySelector('form')
 const chatContainer = document.querySelector('#chat_container')
@@ -11,11 +12,13 @@ function loader(element) {
 
   loadInterval = setInterval(() => {
     element.textContent += '.'
+
+    if (element.textContent == '....') {
+      console.log(element.textContent)
+      element.textContent = ''
+    }
   }, 300)
 
-  if (element.textContent === '....') {
-    element.textContent = ''
-  }
 }
 
 function typeText(element, text) {
@@ -74,6 +77,32 @@ const handleSubmit = async(e) => {
   const messageDiv = document.getElementById(uniqueId)
   console.log(messageDiv)
   loader(messageDiv)
+
+  //fetch data from server -> bot's response
+  const response = await axios.post('http://localhost:5000/', {
+    prompt: data.get('prompt')
+  })
+  .then((res) => {
+    return res
+  })
+  .catch((error) => {
+    console.log(error)
+    return error
+  })
+
+  clearInterval(loadInterval)
+  messageDiv.innerHTML = ''
+  console.log(response)
+  if (response.statusText === 'OK') {
+    const data = await response.data
+    const parsedData = data.bot.trim()
+    console.log(parsedData)
+    typeText(messageDiv, parsedData)
+  } else {
+    const error = await response
+    messageDiv.innerHTML = 'Something went wrong'
+    alert(error)
+  }
 }
 
 form.addEventListener('submit', handleSubmit)
